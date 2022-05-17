@@ -65,12 +65,13 @@ class AllHouseHoldsAgent(HouseholdAgent):
         
         #self.landuse = model.grid.agents[lll].grid_code
         self.landuse = model.grid.agents[lll].Name
-        self.newLU = model.grid.agents[lll].RASTERVALU
+        #RasterValue é relacionado ao uso da terra, 2 para danificado e 3 para não danificado
+	self.newLU = model.grid.agents[lll].RASTERVALU
         if self.newLU is 2 or 3:
             self.damaged = 'yes'
         else:
             self.damaged = 'no'
-        
+        #Distancia do modelo
         self.distance = model.grid.agents[lll].distance
 
         self.job = 0
@@ -84,17 +85,18 @@ class AllHouseHoldsAgent(HouseholdAgent):
         #tac()
 
     def initialize(self):
-        
+        #Alterar as probabilidades de trabalho baseado em dados relacionados à região (Fonte: Outro trabalho ou pesquisa de campo)
         job = ['yes', 'no']
         self.job= np.random.choice(job, 1, p=[0.92, 0.08])[0]
-        
+        #Alterar para trabalho formal ou informal, ou ainda detalhar algumas categorias do trabalho, assim como as probabilidades 
+	#(Fonte: Morar Melhor ou pesquisa de campo) 
         workplace= ['farm', 'fishing', 'construction', 'service']
         p_FB_work= [0, 0, 0, 1]
         workplace_slum = ['farm', 'fishing', 'construction']
         p_slum_work = [0.45, 0.45, 0.1]
         
         #print(self.landuse)
-        
+        #Aloca um local de trabalho para um agente, remover a separação por uso da terra 
         if self.landuse == 2:
             if self.job == "yes":
                 self.workplace = np.random.choice(workplace_slum, 1, p = p_slum_work)[0]
@@ -102,11 +104,12 @@ class AllHouseHoldsAgent(HouseholdAgent):
             if self.job== "yes":
                 self.workplace = np.random.choice(workplace, 1, p = p_FB_work)[0]
         
-        
+        #Rever como fazer esse conceito de distância já baseada no tempo
         if self.workplace != 'service':
             self.distance = 0.1
 
-		
+	#Definir para quais ambientes de trabalho teriam quais níveis de renda. Avaliar níveis de renda possíveis
+	#Verificar se é necessário normalizar a renda baseado na pesquisa de campo
         if self.job == "yes":
             if self.workplace== "service":
                 self.income = "high"
@@ -121,7 +124,8 @@ class AllHouseHoldsAgent(HouseholdAgent):
             job1 = 1
         else:
             job1 = 0
-            
+        
+	#Avaliar para quanto trocar a renda, se necessário
         if self.income == "low":
             income = 0.5
         elif self.income == "high":
@@ -129,6 +133,8 @@ class AllHouseHoldsAgent(HouseholdAgent):
         else:
             income = self.income
         
+	#Nível de educação, baseado no uso da terra, alterar para outras categorias 
+	#e suas porcentagens baseado em pesquisa de campo ou outros trabalhos
         if self.landuse == 2:
             education =  0.5
         elif self.landuse == 3:
@@ -137,7 +143,10 @@ class AllHouseHoldsAgent(HouseholdAgent):
                
         D_normalized = float(self.distance)
         #print (self.workplace, self.landuse, self.income, income, education, D_normalized)
-        self.satisfaction = job1*(income/education)*(1-D_normalized)    
+        #Primeira equação de satisfação, refletir sobre a troca de satisfação para a resiliência do agente
+	#E analisar os fatores de renda e educação;
+	#Verificar se é necessário adicionar mais fatores, como o estado inicial da casa
+	self.satisfaction = job1*(income/education)*(1-D_normalized)    
         self.homo = 0
         self.shomo = 0
         self.attr = [self.job, self.workplace, self.income, self.distance]
@@ -170,7 +179,8 @@ class AllHouseHoldsAgent(HouseholdAgent):
         job1 = float(job1)
         income = float(income)
         education = float(education)
-        DImp = 1
+        #Nível de danos do local, podendo alterar para nível de alteração da casa
+	DImp = 1
         
         # Reading an excel file using Python      
         # Give the location of the file 
@@ -182,7 +192,8 @@ class AllHouseHoldsAgent(HouseholdAgent):
           
                        
         if self.model.schedule.time == 1: # Event time == step2
-            if self.damaged == "yes":
+        #Verificar como fazer a alteração do fator do Nível de danos para uma informação pertinente
+	    if self.damaged == "yes":
                 DImp = 0
             elif self.damaged == "no":
                 DImp = 1
@@ -190,6 +201,7 @@ class AllHouseHoldsAgent(HouseholdAgent):
         if self.model.schedule.time >= 2: # Early recovery == step3      
             #print(self.model.schedule.time)  
             #print(self.landuse)               
+	#A princípio pular essa fase
             if self.damaged == "yes":
                 #print(self.landuse)
                 #print(self.damaged)
@@ -214,6 +226,9 @@ class AllHouseHoldsAgent(HouseholdAgent):
 
        
         #satisfaction score calculation
+	#Poder analisar e colocar um fator multiplicador para a equação de resiliência,
+	#Verificar se este fator é probabilístico ou determinístico
+	#Refletir sobre a atribuição deste valor
         self.satisfaction = DImp*job1*(income/education)*(1-D_normalized)
         if self.satisfaction >1:
             print(self.satisfaction, job1, self.income, income, education)
@@ -227,16 +242,18 @@ class AllHouseHoldsAgent(HouseholdAgent):
         #print(threshold)
         
         if threshold > self.satisfaction:
+	#Definir as escolhas de alteração do agente, para responder as questões levantadas. 
+	#Além disso, analisar se as probabilidades são condizentes
             choice_type= ['only_job', 'only_location', 'job+location']
             self.choice_type= np.random.choice(choice_type, 1, p=[0.4, 0.4, 0.2])[0]
             if self.choice_type == "only_job":
                 
                 listtt= self.only_jobF(sheet)
-
+	#Analisar essa alteração de trabalho
                 SortIndex = np.argsort(listtt)[::-1][:10] # sort the best choices
                 RandNum = random.randint(0,1)
                 SelectedIndex = SortIndex[RandNum] # select one of the 7 best available choices
-
+	#Na prática, se a nova satisfação for maior que a satisfação atual, ele altera o trabalho, se não, ele se mantém no local atual
                 if listtt[SelectedIndex] > self.satisfaction : #if the selected job provides higher satisfaction score than current one
                     self.job = self.ListforBest[SelectedIndex][0]
                     self.workplace = self.ListforBest[SelectedIndex][1]
@@ -494,9 +511,11 @@ class AllHouseHoldsAgent(HouseholdAgent):
                 
                 
     def mean_satisfaction(self):
+	#Cálculo da satisfação média, A princípio se é necessário alterar algo
         agent_satisfaction = self.model.datacollector.get_agent_vars_dataframe()
         agent_satisfaction.head()
         stp_satsf = self.model.schedule.time
+	#Retorna uma parte dos dadso gerados
         all_satisfaction = agent_satisfaction.xs(stp_satsf, level="Step")["Satisfaction"]  
         hist = np.histogram(all_satisfaction, bins=[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
         histt = hist[0]
@@ -511,7 +530,7 @@ class AllHouseHoldsAgent(HouseholdAgent):
     
     
     def update_coefficients(self,sheet):
-                
+        # Deve-se alterar essa função com as probabilidades
         HHs = [100, 40, 50]
         PB_Farm_Slum = [0.6, 0.1, 0.15] ; PB_Fishing_Slum = [0.4, 0.6, 0.4]; PB_Construction_Slum = [0, 0.3, 0.45]; PB_Services_Slum = [0, 0, 0]
         PB_Farm_FB = [0.1, 0.1, 0.1]; PB_Fishing_FB = [0.1, 0.1, 0.1]; PB_Construction_FB = [0.1, 0.1, 0.1]; PB_Services_FB = [0.7, 0.7, 0.7]
@@ -530,7 +549,7 @@ class AllHouseHoldsAgent(HouseholdAgent):
           all_workplace = agent_all.xs(stp_satsf, level="Step")["WorkPlace"]
           sorted_homo_indices = all_homo.argsort()[-5:][::-1]
           workplaces_homo = []
-
+	# Analisar melhor essa parte, porque multiplicar os índices de trabalho pro 0.2 (P/ Felix analisar melhor depois esse código)
           for wh in range(len(sorted_homo_indices)):
               workplaces_homo.append(all_workplace[sorted_homo_indices[wh]])
           p_homo = [workplaces_homo.count('farm')*0.2,workplaces_homo.count('fishing')*0.2,workplaces_homo.count('construction')*0.2,workplaces_homo.count('service')*0.2]
@@ -552,7 +571,7 @@ class AllHouseHoldsAgent(HouseholdAgent):
                       p_slum_work = []
                       p_slum_work = [0.4, 0.4, 0.2, 0]   
                   p_slum_all = [(p_slum_work[0]+p_homo[0])/2,(p_slum_work[1]+p_homo[1])/2,(p_slum_work[2]+p_homo[2])/2,(p_slum_work[3]+p_homo[3])/2]
-
+	#Cálculo de novas probabilidades de ambiente de trabalho de forma dinâmica 
                   if self.job == "yes":
                      self.workplace = np.random.choice(workplace, 1, p = p_slum_all)[0]
                      
