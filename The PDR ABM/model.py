@@ -44,7 +44,7 @@ def agent_workplace(agent):
         return None
     else:
         return agent.workplace
-
+#Pesquisar sobre jaccard similarity, alterar função
 def jaccard_similarity(list1, list2):
     intersection = len(list(set(list1).intersection(list2)))
     union = 2
@@ -54,8 +54,8 @@ class RecoveryModel(Model):
 
     def __init__(self, locations, N1, scheduleClass, initialization=None, seed=None):
         if initialization == None:
-            raise Exception("Initialization cannot be none")
-            
+            raise Exception("Initialization cannot be done")
+   #N é o número estimado de moradias em uma localização         
         N = len(locations['features']) * N1 #N1 =density of housholds in one building
         #print(N)
         self.landuse = locations['features'][0]['landuse']
@@ -75,6 +75,7 @@ class RecoveryModel(Model):
                                                             "LandUse": agent_LU,
                                                             "Homo": agent_homo,
                                                             "WorkPlace": agent_workplace})
+        #Verificar as funções bbox() e rtree()
         self.grid.update_bbox()
         self.grid.create_rtree()
         
@@ -86,13 +87,15 @@ class RecoveryModel(Model):
             self.nw.place_agent(agent, list_of_random_nodes[i])
             self.schedule.add(agent)
             self.grid.add_agent(agent) 
-
+    #Como calcular a homofilia, 
+    #O que pode ser HH=HouseHold
     def calculate_homophily(self):
         for i in range(self.G.number_of_nodes()):
             HH_homphily = 0
             total_homophily = 0
             c = 1
             for agent in self.G.node[i]['agent']:
+    #Levar em consideração os fatores para o cálculo da homofilia, são os abaixo deste comentário
                 attr_self = [agent.workplace, agent.income, agent.education]
                 agent_location = agent.shape
                 
@@ -104,11 +107,14 @@ class RecoveryModel(Model):
             for node in neighbor_nodes:
                 for nbr in self.G.node[node]['agent']:
                     attr_neighbor = [nbr.workplace, nbr.income, nbr.education]
+    #Jaccard_similarity foi utilizada para dar "peso" aos nós dos vizinhos dos agentes
+    #A homofilia total é sempre acrescida desse "peso por vizinho, até finalizar todos os vizinhos daquele agente
                     self.G[i][node]['weight'] = jaccard_similarity(attr_self, attr_neighbor)
                     total_homophily = total_homophily + jaccard_similarity(attr_self, attr_neighbor)
                     neighbor_point = nbr.shape
                     if HH_polygon.contains(neighbor_point):
                         c = c + 1
+    #Se o vizinho está no mesmo local do agente, é acrescido esse peso à homofilia da moradia para o cálculo de uma homofilia média (explicar para Elaine depois)
                         HH_homphily = HH_homphily + jaccard_similarity(attr_self, attr_neighbor)
                     else:
                         pass
