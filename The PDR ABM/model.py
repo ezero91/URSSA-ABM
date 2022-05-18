@@ -55,9 +55,10 @@ class RecoveryModel(Model):
     def __init__(self, locations, N1, scheduleClass, initialization=None, seed=None):
         if initialization == None:
             raise Exception("Initialization cannot be done")
-   #N é o número estimado de moradias em uma localização         
+   #N é o número estimado de moradias em uma localização  Dado: Média de moradias por edificação       
         N = len(locations['features']) * N1 #N1 =density of housholds in one building
         #print(N)
+        #Definir categoria do estado da edificação (Com/Sem
         self.landuse = locations['features'][0]['landuse']
         #print(self.landuse[0])
         self.running = True
