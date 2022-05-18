@@ -146,6 +146,7 @@ class AllHouseHoldsAgent(HouseholdAgent):
         #Primeira equação de satisfação, refletir sobre a troca de satisfação para a resiliência do agente
 	#E analisar os fatores de renda e educação;
 	#Verificar se é necessário adicionar mais fatores, como o estado inicial da casa
+	#Essa primeira equação de satisfação não leva em consideração fatores espaciais, apenas relacionados ao agente
 	self.satisfaction = job1*(income/education)*(1-D_normalized)    
         self.homo = 0
         self.shomo = 0
@@ -253,7 +254,7 @@ class AllHouseHoldsAgent(HouseholdAgent):
                 SortIndex = np.argsort(listtt)[::-1][:10] # sort the best choices
                 RandNum = random.randint(0,1)
                 SelectedIndex = SortIndex[RandNum] # select one of the 7 best available choices
-	#Na prática, se a nova satisfação for maior que a satisfação atual, ele altera o trabalho, se não, ele se mantém no local atual
+	#Na prática, se a nova satisfação for maior que a satisfação atual, ele altera o trabalho, se não, ele se mantém no trabalho atual
                 if listtt[SelectedIndex] > self.satisfaction : #if the selected job provides higher satisfaction score than current one
                     self.job = self.ListforBest[SelectedIndex][0]
                     self.workplace = self.ListforBest[SelectedIndex][1]
@@ -531,6 +532,7 @@ class AllHouseHoldsAgent(HouseholdAgent):
     
     def update_coefficients(self,sheet):
         # Deve-se alterar essa função com as probabilidades
+
         HHs = [100, 40, 50]
         PB_Farm_Slum = [0.6, 0.1, 0.15] ; PB_Fishing_Slum = [0.4, 0.6, 0.4]; PB_Construction_Slum = [0, 0.3, 0.45]; PB_Services_Slum = [0, 0, 0]
         PB_Farm_FB = [0.1, 0.1, 0.1]; PB_Fishing_FB = [0.1, 0.1, 0.1]; PB_Construction_FB = [0.1, 0.1, 0.1]; PB_Services_FB = [0.7, 0.7, 0.7]
